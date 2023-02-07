@@ -5,6 +5,13 @@ IDRAC_IP='666.666.666.666'
 IDRAC_USER='IHopeThisWorks'
 IDRAC_PASSWORD='ItDoesIfYouUseManualMode :)))'
 
+#
+if [ $IDRAC_IP -eq '666.666.666.666' ] && [ $IDRAC_USER -eq 'IHopeThisWorks' ] && [ $IDRAC_PASSWORD -eq 'ItDoesIfYouUseManualMode :)))' ]
+  echo "Chage the default values located at the top of the script, I could/should promot for them but that can be added in *later*"
+  sleep 5
+  exit 1
+fi
+
 # Probably dont change these
 IPMI_MANUAL_RAW='0x30 0x30 0x01 0x00'
 
@@ -23,6 +30,7 @@ if [ "$manual_yn" = "Y"
   else
     echo "Enter a valid input lol"
     exit 1
+fi
 clear 
 
 # Get user input for fan control
@@ -41,6 +49,7 @@ case $fan_control in
      echo "Enter in a valid number LUL"
      else 
      ipmitool -I lanplus -H $IDRAC_IP -U $IDRAC_USER -P $IDRAC_PASSWORD raw 0x30 0x30 0x02 0xff $man_hex
+     fi
      ;;
   2) 
   echo "This is coming soon (probably never lol) + Id like to do an automatic curve as well. Bye!"

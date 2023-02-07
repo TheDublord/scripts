@@ -4,10 +4,13 @@
 IDRAC_IP='666.666.666.666'
 IDRAC_USER='IHopeThisWorks'
 IDRAC_PASSWORD='ItDoesIfYouUseManualMode :)))'
+# The password is in reference to when I tried changing my fan speed, and the fan would dip, but go back to what they were.
+# As it turns out, I had not set the fans to manual mode, so I decided to make a script to automate the process.
+# I should just make it a short one but this will at some point in the next 80 years will have the features I plan to add.
 
-#
+# Checks if you changed the default values, im not checking if theyre correct, thats a you problem dawg
 if [ $IDRAC_IP -eq '666.666.666.666' ] && [ $IDRAC_USER -eq 'IHopeThisWorks' ] && [ $IDRAC_PASSWORD -eq 'ItDoesIfYouUseManualMode :)))' ]
-  echo "Chage the default values located at the top of the script, I could/should promot for them but that can be added in *later*"
+  echo "Change the default values located at the top of the script, I could/should promot for them but that can be added in *later*"
   sleep 5
   exit 1
 fi

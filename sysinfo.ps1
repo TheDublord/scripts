@@ -21,7 +21,7 @@ function ConvertTo-HumanReadable {
         $index++
     }
 
-    return "{0:N2} {1}" -f $size, $units[$index]
+    return $size, $units[$index]
 }
 
 # Set the battery report path
@@ -32,6 +32,10 @@ if (-not (Test-Path $reportPath)) {
     Write-Host "Generating battery report..."
     powercfg /batteryreport /output $reportPath
 }
+# Get system information
+$systemInfo = Get-CimInstance -Class Win32_ComputerSystem | Select-Object Manufacturer, Model
+
+Write-Host "--- $($systemInfo.Manufacturer) $($systemInfo.Model) ---"
 
 # Get CPU information
 $cpuInfo = Get-CimInstance -Class Win32_Processor | Select-Object -First 1
@@ -67,7 +71,7 @@ if ($filledSlotsMatch) {
 }
 if ($ramModules -gt 0) {
     $moduleCapacity = $totalCapacity / 1GB / $ramModules
-    $moduleCapacity = "{0:N2}GB" -f $moduleCapacity
+
 } else {
     $moduleCapacity = ""
 }
@@ -75,7 +79,7 @@ $ramOutput = "RAM: $($totalCapacity / 1GB)GB"
 if ($moduleCapacity -and $filledSlots) {
     $ramOutput += " ($ramModules module(s) of $moduleCapacity filled in slot(s) $filledSlots)"
 } elseif ($moduleCapacity) {
-    $ramOutput += " ($ramModules module(s) of $moduleCapacity)"
+    $ramOutput += " ($ramModules x $moduleCapacity GB)"
 } else {
     $ramOutput += " ($ramModules module(s))"
 }
@@ -86,14 +90,8 @@ $osInfo = Get-CimInstance -Class Win32_OperatingSystem | Select-Object Caption
 
 Write-Host "Operating System: $($osInfo.Caption)"
 
-# Get system information
-$systemInfo = Get-CimInstance -Class Win32_ComputerSystem | Select-Object Manufacturer, Model
-
-Write-Host "System Manufacturer: $($systemInfo.Manufacturer)"
-Write-Host "System Model: $($systemInfo.Model)"
-
 # Get disk information
-$diskInfo = Get-CimInstance -Class Win32_LogicalDisk | Select-Object DeviceID, Size, FreeSpace
+$diskInfo = Get-CimInstance -Class Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object DeviceID, Size, FreeSpace
 
 Write-Host "Disk Information:"
 foreach ($disk in $diskInfo) {
@@ -105,20 +103,19 @@ foreach ($disk in $diskInfo) {
 # Parse battery report for Design Capacity
 if ($reportPath -and (Test-Path $reportPath)) {
     $batteryReportContent = Get-Content $reportPath -Raw
-    $designCapacityMatch = $batteryReportContent | Select-String -Pattern 'Design Capacity \d+ mWh'
+    $designCapacityMatch = [regex]::Match($batteryReportContent, 'DESIGN CAPACITY</span></td><td>([\d,]+) mWh').Groups[1].Value -replace ',', ''
+    $fullChargeCapacity = [regex]::Match($batteryReportContent, 'FULL CHARGE CAPACITY</span></td><td>([\d,]+) mWh').Groups[1].Value -replace ',', ''
 
-    if ($designCapacityMatch) {
-        $designCapacity = $designCapacityMatch.Matches.Value -replace '\D'
-        $designCapacity = [int]$designCapacity
+    if ($designCapacityMatch -gt 0) {
+        $designCapacity = $designCapacityMatch
         Write-Host "Battery Information"
         Write-Host "------------------"
-        Write-Host "Full Charge Capacity: $($batteryInfo.FullChargeCapacity) mWh"
+        Write-Host "Full Charge Capacity: $fullChargeCapacity mWh"
         Write-Host "Design Capacity: $designCapacity mWh"
-        $chargeFraction = [math]::Round(($batteryInfo.FullChargeCapacity / $designCapacity), 2)
+        $chargeFraction = [math]::Round(($fullChargeCapacity / $designCapacity), 2)
         Write-Host "Charge Capacity as a Fraction: $chargeFraction"
 
         # Open battery report in default browser
-        Invoke-Expression $reportPath
     } else {
         Write-Host "Battery Information: Not available"
     }

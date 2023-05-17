@@ -25,7 +25,7 @@ function ConvertTo-HumanReadable {
 }
 
 # Set the battery report path
-$reportPath = "$env:USERPROFILE\battery_report.html"
+$reportPath = "$env:USERPROFILE\Desktop\battery_report.html"
 
 # Generate battery report
 if (-not (Test-Path $reportPath)) {

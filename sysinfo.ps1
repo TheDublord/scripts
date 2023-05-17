@@ -35,7 +35,14 @@ if (-not (Test-Path $reportPath)) {
 # Get system information
 $systemInfo = Get-CimInstance -Class Win32_ComputerSystem | Select-Object Manufacturer, Model
 
-Write-Host "--- $($systemInfo.Manufacturer) $($systemInfo.Model) ---"
+Write-Host "$($systemInfo.Manufacturer) $($systemInfo.Model)"
+Write-Host "------------------"
+
+# Get operating system information
+$osInfo = Get-CimInstance -Class Win32_OperatingSystem | Select-Object Caption
+
+Write-Host "Operating System: $($osInfo.Caption)"
+
 
 # Get CPU information
 $cpuInfo = Get-CimInstance -Class Win32_Processor | Select-Object -First 1
@@ -85,21 +92,18 @@ if ($moduleCapacity -and $filledSlots) {
 }
 Write-Host $ramOutput
 
-# Get operating system information
-$osInfo = Get-CimInstance -Class Win32_OperatingSystem | Select-Object Caption
-
-Write-Host "Operating System: $($osInfo.Caption)"
-
 # Get disk information
 $diskInfo = Get-CimInstance -Class Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object DeviceID, Size, FreeSpace
 
+Write-Host ""
 Write-Host "Disk Information:"
+Write-Host "------------------"
 foreach ($disk in $diskInfo) {
     Write-Host "  $($disk.DeviceID)"
     Write-Host "    Size: $(ConvertTo-HumanReadable -size $disk.Size)"
     Write-Host "    Free Space: $(ConvertTo-HumanReadable -size $disk.FreeSpace)"
 }
-
+Write-Host ""
 # Parse battery report for Design Capacity
 if ($reportPath -and (Test-Path $reportPath)) {
     $batteryReportContent = Get-Content $reportPath -Raw
@@ -113,7 +117,8 @@ if ($reportPath -and (Test-Path $reportPath)) {
         Write-Host "Full Charge Capacity: $fullChargeCapacity mWh"
         Write-Host "Design Capacity: $designCapacity mWh"
         $chargeFraction = [math]::Round(($fullChargeCapacity / $designCapacity), 2)
-        Write-Host "Charge Capacity as a Fraction: $chargeFraction"
+        $chargeFracPercent = ($chargeFraction * 100)
+        Write-Host "Batery Health: $chargeFracPercent%"
 
         # Open battery report in default browser
     } else {
